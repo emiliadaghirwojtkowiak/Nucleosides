@@ -1,0 +1,71 @@
+
+model {
+for ( i in 1:tNtotal ) {
+logCobs[i,1:13] ~ dmnorm(logthetaMean[i,1:13], omega.inv[1:13,1:13]) # actual data
+
+logCobsPred[i,1:13] ~ dmnorm(logthetaMean[i,1:13], omega.inv[1:13,1:13])
+
+
+for ( j in 1:13 ) {
+logthetaMean[i, j] <- THETA[j] + FRC[j]*casecont[i] + FRA[j]*log(tage[i]/50) + FRG[j]*tgender[i]
+}
+}
+#########  cancer predictions on val set ###
+
+
+for ( i in 1:vNtotal ) {
+
+vlogCobs[i, 1:13] ~ dmnorm(vlogthetaMean[i, 1:13], omega.inv[1:13, 1:13])
+
+for(j in 1:13){
+vlogthetaMean[i, j] <- THETA[j] + FRC[j]*casecontv[i] + FRA[j]*log(vage[i]/50) + FRG[j]*vgender[i]
+
+}
+}	
+
+###########  nucleosides predictions for val set ###
+
+for(i in 1:vNtotal ){
+logCobsvPred[i, 1:13] ~ dmnorm(logthetaMeanvPred[i, 1:13], omega.inv[1:13, 1:13])
+
+for(j in 1:13){
+logthetaMeanvPred[i, j] <- THETA[j] + FRC[j] * casecontvalpred[i] + FRA[j] * log(vage[i]/50) + FRG[j] * vgender[i]
+}
+}	
+
+
+#  priors test
+omega.inv[1:13, 1:13] ~ dwish(omega_inv_prior[1:13,1:13], 13)
+omega[1:13, 1:13]     <- inverse(omega.inv[1:13, 1:13]) # BSV
+
+for ( j in 1:13 ) {
+THETA[j] ~ dnorm(0,0.0001)
+FRC[j] ~ dnorm(0, tausigma1)
+FRA[j] ~ dnorm(0.203 ,tausigma2)
+FRG[j] ~ dnorm(0.293 ,tausigma3)
+
+
+} 
+
+tausigma1 <- 1/(sigma1*sigma1)
+sigma1~ dunif(0.001, 1000)
+
+tausigma2 <- 1/(sigma2*sigma2)
+sigma2~ dunif(0.001, 1000)
+
+tausigma3 <- 1/(sigma3*sigma3)
+sigma3~ dunif(0.001, 1000)
+
+
+
+#  priors val
+for ( j in 1:vNtotal ) {
+casecontv[j] ~ dbern(PPP[j])
+
+}
+for ( j in 1:vNtotal ) {
+PPP[j] ~ dbeta( 1,1 )
+
+}
+}
+}
